@@ -10,6 +10,7 @@
         EQEQ,
         EQ,
         IDENT,
-        IF
+        IF,
+        NUMBER
     }
 }

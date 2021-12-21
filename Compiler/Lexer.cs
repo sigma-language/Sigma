@@ -154,6 +154,34 @@ namespace Compiler
                 _ => null
             };
 
+            // Numbers
+            if (char.IsDigit(this.CurChar))
+            {
+                var startPos = this.Pos;
+                var startCol = this.Col;
+
+                var newPos = 1;
+                while (char.IsDigit(this.Peek(newPos)))
+                    newPos += 1;
+
+                // Decimal
+                if (this.Peek(newPos) == '.')
+                {
+                    newPos += 1;
+
+                    if (!char.IsDigit(this.Peek(newPos)))
+                        this.Abort($"Illegal character in number `{CurChar}` (U+{(int)CurChar}) at {LineNo}:{Col}");
+
+                    while (char.IsDigit(this.Peek(newPos)))
+                        newPos += 1;
+                }
+
+                newPos += startPos;
+
+                var tokenText = this.Source[startPos..newPos];
+                token = new(tokenText, TokenType.NUMBER, this.LineNo, startCol);
+            }
+
             // Identifiers & Keywords.
             if (char.IsLetter(this.CurChar))
             {
