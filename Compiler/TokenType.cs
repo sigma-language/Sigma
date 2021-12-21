@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Compiler
+﻿namespace Compiler
 {
     enum TokenType
     {
@@ -14,6 +8,8 @@ namespace Compiler
         SLASH,
         ASTERISK,
         EQEQ,
-        EQ
+        EQ,
+        IDENT,
+        IF
     }
 }

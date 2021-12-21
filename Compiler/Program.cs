@@ -15,15 +15,15 @@ namespace Compiler
             //{
             //    Console.WriteLine(e);
             //}
-            string source = @"+-=  == 
-                /**=====";
+            // string source = @"+-=== a if";
+            string source = @"asd ifs";
 
             Lexer lexer = new(source);
             var tokens = lexer.Tokenize();
 
             foreach (var token in tokens)
             {
-                Console.WriteLine($"{token.Kind} at {token.LineNo}:{token.Col} ({token.Length})");
+                Console.WriteLine($"\"{token.Text}\" {token.Kind} at {token.LineNo}:{token.Col} ({token.Length})");
             }
         }
     }

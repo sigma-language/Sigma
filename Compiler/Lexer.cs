@@ -14,6 +14,8 @@ namespace Compiler
         int LineNo { get; set; }
         int Col { get; set; }
 
+        Dictionary<string, TokenType> _KEYWORDS;
+
         public Lexer(string source)
         {
             this.Source = source;
@@ -22,6 +24,11 @@ namespace Compiler
             this.Col = 0;
 
             this.NextChar();
+
+            this._KEYWORDS = new()
+            {
+                { "if", TokenType.IF },
+            };
         }
 
         Token CreateToken(char text, TokenType kind)
@@ -61,6 +68,9 @@ namespace Compiler
             length = newlineLength;
             return newlineLength > 0;
         }
+
+        bool IsKeyword(string tokenText, out TokenType keyword)
+            => this._KEYWORDS.TryGetValue(tokenText, out keyword);
 
         void NextChar(int length = 1)
         {
@@ -103,12 +113,12 @@ namespace Compiler
             this.CurChar = this.Source[this.Pos];
         }
 
-        char Peek()
+        char Peek(int peekLength = 1)
         {
-            if (this.Pos + 1 >= this.Source.Length)
+            if (this.Pos + peekLength >= this.Source.Length)
                 return '\0';
 
-            return this.Source[this.Pos + 1];
+            return this.Source[this.Pos + peekLength];
         }
 
         public Token[] Tokenize()
@@ -118,7 +128,6 @@ namespace Compiler
             while (token.Kind != TokenType.EOF)
             {
                 tokens.Add(token);
-                this.NextChar(length: token.Length);
                 token = this.GetToken();
             }
 
@@ -132,20 +141,43 @@ namespace Compiler
         {
             var token = (this.CurChar, this.Peek()) switch
             {
-                ('+', _)   => CreateToken('+',  TokenType.PLUS),
-                ('-', _)   => CreateToken('-',  TokenType.MINUS),
-                ('/', _)   => CreateToken('/',  TokenType.SLASH),
-                ('*', _)   => CreateToken('*',  TokenType.ASTERISK),
-                ('=', '=') => CreateToken("==", TokenType.EQEQ),
-                ('=', _)   => CreateToken('=',  TokenType.EQ),
+                // TODO: ADD ALL TOKENS!
+                // Numbers, binary / hex
+                ('+', _)   => this.CreateToken('+',  TokenType.PLUS),
+                ('-', _)   => this.CreateToken('-',  TokenType.MINUS),
+                ('/', _)   => this.CreateToken('/',  TokenType.SLASH),
+                ('*', _)   => this.CreateToken('*',  TokenType.ASTERISK),
+                ('=', '=') => this.CreateToken("==", TokenType.EQEQ),
+                ('=', _)   => this.CreateToken('=',  TokenType.EQ),
 
-                ('\0', _)  => CreateToken('\0', TokenType.EOF),
+                ('\0', _)  => this.CreateToken('\0', TokenType.EOF),
                 _ => null
             };
+
+            // Identifiers & Keywords.
+            if (char.IsLetter(this.CurChar))
+            {
+                var startPos = this.Pos;
+                var startCol = this.Col;
+
+                var newPos = 1;
+                while (char.IsLetterOrDigit(this.Peek(newPos)))
+                    newPos += 1;
+
+                newPos += startPos;
+                var tokenText = this.Source[startPos..newPos];
+
+                TokenType keyword;
+                if (this.IsKeyword(tokenText, out keyword))
+                    token = new(tokenText, keyword, this.LineNo, startCol);
+                else
+                    token = new(tokenText, TokenType.IDENT, this.LineNo, startCol);
+            }
 
             if (token is null)
                 this.Abort($"Unknown character `{CurChar}` (U+{(int)CurChar}) at {LineNo}:{Col}");
 
+            this.NextChar(length: token.Length);
             return token;
         }
 
