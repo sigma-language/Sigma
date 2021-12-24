@@ -16,7 +16,7 @@ namespace Compiler
             //    Console.WriteLine(e);
             //}
             // string source = @"+-=== a if";
-            string source = @"+-123 asdwa   9.8654 if */";
+            string source = @"if ->_sus ===<- -> _ = 1 + 1; <-";
 
             Lexer lexer = new(source);
             var tokens = lexer.Tokenize();
