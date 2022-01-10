@@ -1,7 +1,8 @@
 ﻿namespace Compiler
 {
-    enum TokenType
+    public enum TokenType
     {
+        #pragma warning disable SA1602 // EnumerationItemsMustBeDocumented
         EOF,
         PLUS,
         MINUS,
@@ -33,6 +34,12 @@
         GTEQ,
         LTEQ,
         ANDAND,
-        OROR
+        OROR,
+        BIN_NUMBER,
+        HEX_NUMBER,
+        OCT_NUMBER,
+        COLON,
+        PRINT,
+#pragma warning restore SA1602 // EnumerationItemsMustBeDocumented
     }
 }

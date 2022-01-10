@@ -1,131 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Compiler
+﻿namespace Compiler
 {
-    class Lexer
+    using System;
+    using System.Collections.Generic;
+
+    public class Lexer
     {
-        string Source { get; set; }
-        char CurChar { get; set; }
-        int Pos { get; set; }
-        int LineNo { get; set; }
-        int Col { get; set; }
-
-        Dictionary<string, TokenType> _KEYWORDS;
-
-        public Lexer(string source)
+        private static Dictionary<string, TokenType> keywords = new ()
         {
-            this.Source = source;
-            this.Pos = -1;
-            this.LineNo = 1;
-            this.Col = 0;
+            { "if", TokenType.IF },
+            { "print", TokenType.PRINT },
+        };
+
+        private readonly TextLogger logger;
+        private readonly string source;
+
+        private char curChar;
+        private int pos;
+        private int lineNo;
+        private int col;
+
+        public Lexer(string source, TextLogger logger)
+        {
+            this.logger = logger;
+            this.source = source;
+            this.pos = -1;
+            this.lineNo = 1;
+            this.col = 0;
 
             this.Advance();
-
-            this._KEYWORDS = new()
-            {
-                { "if", TokenType.IF },
-            };
         }
 
-        Token CreateToken(char text, TokenType kind)
-            => new(text.ToString(), kind, this.LineNo, this.Col);
-        Token CreateToken(string text, TokenType kind)
-            => new(text, kind, this.LineNo, this.Col);
-
-        void HandleComment()
+        private string CurLocation
         {
-            int newlineLength;
-            while (!this.IsNewline(out newlineLength))
-                this.Advance();
-            this.HandleNewline(newlineLength);
+            get => $"{this.lineNo}:{this.col}";
         }
 
-        void HandleNewline(int newlineLength)
+        public List<Token> Tokenize()
         {
-            this.Advance(newlineLength);
-            this.LineNo += 1;
-            this.Col = 1;
-        }
+            List<Token> tokens = new ();
 
-        bool IsComment()
-            => this.CurChar == '/' && this.Peek() == '/';
-
-        bool IsWhitespace()
-            => this.CurChar == ' ' || this.CurChar == '\t';
-
-        bool IsNewline(out int length)
-        {
-            var newlineLength = (this.CurChar, this.Peek()) switch
-            {
-                ('\r', '\n') => 2,
-                ('\n', _) => 1,
-                _ => 0
-            };
-            length = newlineLength;
-            return newlineLength > 0;
-        }
-
-        bool IsIdentChar(char character)
-            => char.IsLetterOrDigit(character) || character == '_';
-
-        bool IsKeyword(string tokenText, out TokenType keyword)
-            => this._KEYWORDS.TryGetValue(tokenText, out keyword);
-
-        void SkipWhitespace()
-        {
-            for (int whitespaceCount = 1; whitespaceCount > 0;)
-            {
-                whitespaceCount = 0;
-                int newlineLength;
-                while (this.IsNewline(out newlineLength))
-                {
-                    this.HandleNewline(newlineLength);
-                    whitespaceCount += 1;
-                }
-
-                while (this.IsWhitespace())
-                {
-                    this.Advance();
-                    whitespaceCount += 1;
-                }
-
-                while (this.IsComment())
-                {
-                    this.HandleComment();
-                    whitespaceCount += 1;
-                }
-            }
-        }
-
-        void Advance(int length = 1)
-        {
-            this.Pos += length;
-            this.Col += length;
-
-            if (this.Pos >= this.Source.Length)
-            {
-                this.CurChar = '\0';
-                return;
-            }
-
-            this.CurChar = this.Source[this.Pos];
-        }
-
-        char Peek(int peekLength = 1)
-        {
-            if (this.Pos + peekLength >= this.Source.Length)
-                return '\0';
-
-            return this.Source[this.Pos + peekLength];
-        }
-
-        public Token[] Tokenize()
-        {
-            List<Token> tokens = new();
             var token = this.GetToken();
             while (token.Kind != TokenType.EOF)
             {
@@ -133,62 +46,259 @@ namespace Compiler
                 token = this.GetToken();
             }
 
-            // Add the EOF token.
+            // Include the EOF Token in the token array.
             tokens.Add(token);
 
-            return tokens.ToArray();
+            return tokens;
         }
 
-        Token LexNumber()
+        private Token CreateToken(char text, TokenType kind)
+            => new (text.ToString(), kind, this.lineNo, this.col);
+
+        private Token CreateToken(string text, TokenType kind)
+            => new (text, kind, this.lineNo, this.col);
+
+        private void HandleComment()
         {
-            var startPos = this.Pos;
-            var startCol = this.Col;
-
-            while (char.IsDigit(this.CurChar))
-                this.Advance();
-
-            // Decimal
-            if (this.CurChar == '.')
+            int newlineLength;
+            while (!this.IsNewline(out newlineLength))
             {
                 this.Advance();
-
-                if (!char.IsDigit(this.CurChar))
-                    this.Abort($"Illegal character in number `{CurChar}` (U+{(int)CurChar}) at {LineNo}:{Col}");
-
-                while (char.IsDigit(this.CurChar))
-                    this.Advance();
             }
 
-            var tokenText = this.Source [startPos..this.Pos];
-            return new(tokenText, TokenType.NUMBER, this.LineNo, startCol);
+            this.HandleNewline(newlineLength);
         }
 
-        Token LexIdentifier()
+        private void HandleNewline(int newlineLength)
         {
-            var startPos = this.Pos;
-            var startCol = this.Col;
+            this.Advance(newlineLength);
+            this.lineNo += 1;
+            this.col = 1;
+        }
 
-            while (this.IsIdentChar(this.CurChar))
+        private bool IsNewline(out int length)
+        {
+            var newlineLength = (this.curChar, this.Peek()) switch
+            {
+                ('\r', '\n') => 2,
+                ('\n', _) => 1,
+                _ => 0
+            };
+
+            length = newlineLength;
+            return newlineLength > 0;
+        }
+
+        private void SkipWhitespace()
+        {
+            bool IsComment()
+                => this.curChar == '/' && this.Peek() == '/';
+
+            bool IsWhitespace()
+                => this.curChar == ' ' || this.curChar == '\t';
+
+            for (int whitespaceCount = 1; whitespaceCount > 0;)
+            {
+                whitespaceCount = 0;
+
+                int newlineLength;
+                while (this.IsNewline(out newlineLength))
+                {
+                    this.HandleNewline(newlineLength);
+                    whitespaceCount += 1;
+                }
+
+                while (IsWhitespace())
+                {
+                    this.Advance();
+                    whitespaceCount += 1;
+                }
+
+                while (IsComment())
+                {
+                    this.HandleComment();
+                    whitespaceCount += 1;
+                }
+            }
+        }
+
+        private void Advance(int length = 1)
+        {
+            this.pos += length;
+            this.col += length;
+
+            if (this.pos >= this.source.Length)
+            {
+                this.curChar = '\0';
+                return;
+            }
+
+            this.curChar = this.source[this.pos];
+        }
+
+        private char Peek(int peekLength = 1)
+        {
+            if (this.pos + peekLength >= this.source.Length)
+            {
+                return '\0';
+            }
+
+            return this.source[this.pos + peekLength];
+        }
+
+        private Token LexBinNumber()
+        {
+            var startPos = this.pos;
+            var startCol = this.col;
+
+            this.Advance(2);
+            if (!char.IsDigit(this.curChar))
+            {
+                var invalidNumber = this.source[startPos..(this.pos + 1)];
+                this.logger.Abort($"Invalid binary literal: `{invalidNumber}` at {this.CurLocation}");
+            }
+
+            while (char.IsDigit(this.curChar))
+            {
+                if (!(this.curChar == '0' || this.curChar == '1'))
+                {
+                    this.logger.Abort($"Invalid digit in binary literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                }
+
+                this.Advance();
+            }
+
+            var tokenText = this.source[startPos..this.pos];
+            return new (tokenText, TokenType.BIN_NUMBER, this.lineNo, startCol);
+        }
+
+        private Token LexHexNumber()
+        {
+            bool IsHexChar(char character)
+                => "0123456789abcdefABCDEF".Contains(character);
+
+            var startPos = this.pos;
+            var startCol = this.col;
+
+            this.Advance(2);
+
+            if (!IsHexChar(this.curChar))
+            {
+                var invalidNumber = this.source[startPos..(this.pos + 1)];
+                this.logger.Abort($"Invalid hexadecimal literal: `{invalidNumber}` at {this.CurLocation}");
+            }
+
+            while (IsHexChar(this.curChar))
+            {
+                if (!IsHexChar(this.curChar))
+                {
+                    this.logger.Abort($"Invalid character in hexadecimal literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                }
+
+                this.Advance();
+            }
+
+            var tokenText = this.source[startPos..this.pos];
+            return new (tokenText, TokenType.HEX_NUMBER, this.lineNo, startCol);
+        }
+
+        private Token LexOctalNumber()
+        {
+            bool IsOctalChar(char character)
+                => "01234567".Contains(character);
+
+            var startPos = this.pos;
+            var startCol = this.col;
+
+            this.Advance(2);
+
+            if (!IsOctalChar(this.curChar))
+            {
+                var invalidNumber = this.source[startPos..(this.pos + 1)];
+                this.logger.Abort($"Invalid octal literal: `{invalidNumber}` at {this.CurLocation}");
+            }
+
+            while (IsOctalChar(this.curChar))
+            {
+                if (!IsOctalChar(this.curChar))
+                {
+                    this.logger.Abort($"Invalid character in octal literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                }
+
+                this.Advance();
+            }
+
+            var tokenText = this.source[startPos..this.pos];
+            return new (tokenText, TokenType.OCT_NUMBER, this.lineNo, startCol);
+        }
+
+        private Token LexNumber()
+        {
+            var startPos = this.pos;
+            var startCol = this.col;
+
+            while (char.IsDigit(this.curChar))
+            {
+                this.Advance();
+            }
+
+            // Decimal
+            if (this.curChar == '.')
+            {
                 this.Advance();
 
-            var tokenText = this.Source[startPos..this.Pos];
+                if (!char.IsDigit(this.curChar))
+                {
+                    this.logger.Abort($"Expected a digit after the decimal point, got: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                }
 
-            TokenType keyword;
-            if (this.IsKeyword(tokenText, out keyword))
-                return new(tokenText, keyword, this.LineNo, startCol);
-            
-            return new(tokenText, TokenType.IDENT, this.LineNo, startCol);
+                while (char.IsDigit(this.curChar))
+                {
+                    this.Advance();
+                }
+            }
+
+            var tokenText = this.source[startPos..this.pos];
+            return new (tokenText, TokenType.NUMBER, this.lineNo, startCol);
         }
 
-        Token GetToken()
+        private Token LexIdentifier()
+        {
+            bool IsIdentChar(char character)
+                => char.IsLetterOrDigit(character) || character == '_';
+
+            bool IsKeyword(string tokenText, out TokenType keyword)
+                => Lexer.keywords.TryGetValue(tokenText, out keyword);
+
+            var startPos = this.pos;
+            var startCol = this.col;
+
+            while (IsIdentChar(this.curChar))
+            {
+                this.Advance();
+            }
+
+            var tokenText = this.source[startPos..this.pos];
+
+            TokenType keyword;
+            if (IsKeyword(tokenText, out keyword))
+            {
+                return new (tokenText, keyword, this.lineNo, startCol);
+            }
+
+            return new (tokenText, TokenType.IDENT, this.lineNo, startCol);
+        }
+
+        private Token GetToken()
         {
             this.SkipWhitespace();
-            var token = (this.CurChar, this.Peek()) switch
+            var token = (this.curChar, this.Peek()) switch
             {
+                #pragma warning disable SA1025 // CodeMustNotContainMultipleWhitespaceInARow
                 // Delimiters
-                (';', _) => this.CreateToken(';', TokenType.SEMICOLON),
-                ('(', _) => this.CreateToken('(', TokenType.LPAREN),
-                (')', _) => this.CreateToken(')', TokenType.RPAREN),
+                (';', _)   => this.CreateToken(';', TokenType.SEMICOLON),
+                ('(', _)   => this.CreateToken('(', TokenType.LPAREN),
+                (')', _)   => this.CreateToken(')', TokenType.RPAREN),
                 ('-', '>') => this.CreateToken("->", TokenType.OPEN_ARROW),
                 ('<', '-') => this.CreateToken("<-", TokenType.CLOSE_ARROW),
 
@@ -201,32 +311,33 @@ namespace Compiler
                 // Logical Operators
                 ('&', '&') => this.CreateToken("&&", TokenType.ANDAND),
                 ('|', '|') => this.CreateToken("||", TokenType.OROR),
-                ('!', _) => this.CreateToken('!', TokenType.BANG),
+                ('!', _)   => this.CreateToken('!', TokenType.BANG),
 
                 // Bitwise Logical Operators
-                ('&', _) => this.CreateToken('&', TokenType.AND),
-                ('~', _) => this.CreateToken('~', TokenType.TILDE),
-                ('|', _) => this.CreateToken('|', TokenType.PIPE),
-                ('^', _) => this.CreateToken('^', TokenType.CARET),
+                ('&', _)   => this.CreateToken('&', TokenType.AND),
+                ('~', _)   => this.CreateToken('~', TokenType.TILDE),
+                ('|', _)   => this.CreateToken('|', TokenType.PIPE),
+                ('^', _)   => this.CreateToken('^', TokenType.CARET),
 
                 // Comparisons (1 long)
-                ('>', _) => this.CreateToken('>', TokenType.GT),
-                ('<', _) => this.CreateToken('<', TokenType.LT),
-                ('?', _) => this.CreateToken('?', TokenType.QUESTION),
-                
+                ('>', _)   => this.CreateToken('>', TokenType.GT),
+                ('<', _)   => this.CreateToken('<', TokenType.LT),
+                ('?', _)   => this.CreateToken('?', TokenType.QUESTION),
+
                 // Mathematical Operators
                 ('+', _)   => this.CreateToken('+',  TokenType.PLUS),
                 ('-', _)   => this.CreateToken('-',  TokenType.MINUS),
                 ('/', _)   => this.CreateToken('/',  TokenType.SLASH),
                 ('*', _)   => this.CreateToken('*',  TokenType.ASTERISK),
-                ('%', _) => this.CreateToken('%', TokenType.PERCENT),
+                ('%', _)   => this.CreateToken('%', TokenType.PERCENT),
 
                 // Yes
-                ('=', _) => this.CreateToken('=', TokenType.EQ),
-                ('"', _) => this.CreateToken('"', TokenType.QUOTE),
+                ('=', _)   => this.CreateToken('=', TokenType.EQ),
+                ('"', _)   => this.CreateToken('"', TokenType.QUOTE),
 
                 ('\0', _)  => this.CreateToken('\0', TokenType.EOF),
                 _ => null
+                #pragma warning restore SA1025 // CodeMustNotContainMultipleWhitespaceInARow
             };
 
             if (token is not null)
@@ -235,25 +346,43 @@ namespace Compiler
                 return token;
             }
 
+            // Binary Numbers.
+            if (this.curChar == '0' && this.Peek() == 'b')
+            {
+                token = this.LexBinNumber();
+            }
+
+            // Hex Numbers.
+            else if (this.curChar == '0' && this.Peek() == 'x')
+            {
+                token = this.LexHexNumber();
+            }
+
+            // Octal Numbers.
+            else if (this.curChar == '0' && this.Peek() == 'o')
+            {
+                token = this.LexOctalNumber();
+            }
+
             // Numbers
-            if (char.IsDigit(this.CurChar))
-                token = LexNumber();
+            else if (char.IsDigit(this.curChar))
+            {
+                token = this.LexNumber();
+            }
 
             // Identifiers & Keywords.
             // Identifiers can start with either a letter or a "_".
-            if (char.IsLetter(this.CurChar) || this.CurChar == '_')
+            else if (char.IsLetter(this.curChar) || this.curChar == '_')
+            {
                 token = this.LexIdentifier();
+            }
 
             if (token is null)
-                this.Abort($"Unknown character `{CurChar}` (U+{(int)CurChar}) at {LineNo}:{Col}");
-            
-            return token;
-        }
+            {
+               this.logger.Abort($"Unknown character `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+            }
 
-        void Abort(string message)
-        {
-            Console.WriteLine($"[ERROR] {message}");
-            Environment.Exit(1);
+            return token;
         }
     }
 }
