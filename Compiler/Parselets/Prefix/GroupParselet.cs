@@ -6,9 +6,9 @@
     {
         public override ExprNode Parse(Parser parser, Token token)
         {
-            ExprNode expression = parser.ParseExpression();
+            ExprNode expr = parser.ParseExpression();
             parser.Match(TokenType.RPAREN);
-            return expression;
+            return new GroupExprNode(expr);
         }
     }
 }

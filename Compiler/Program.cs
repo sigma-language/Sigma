@@ -8,15 +8,13 @@ namespace Compiler
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("UPDATE ALL MATCH STATEMENTS WITH CUSTO MESSAGE");
-            // UPDATE ALL MATCH STATEMENTS WITH CUSTO MESSAGE
             string source = @"
                 ->
-                    if (1 == 1) ->
-                        print 0o105;
-                    <-
-                    if (2 >= 0xFA2) ->
-                        print 0b01001;
+                    int sus = 1 + 1;
+                    if (1) ->
+                        print -5 * 4;
+                        // print (5 * 4 - 2) / (4 < 3 ? 2 : 4);
+                        // print (5 * 4 - 2) / (4 > 3 ? 2 : 4);
                     <-
                 <-
             ";
@@ -36,6 +34,9 @@ namespace Compiler
 
             DotFormatGenerator dotter = new ();
             Console.WriteLine(dotter.GenerateDotString(result));
+
+            CodeGenerator codeGen = new ();
+            Console.WriteLine(codeGen.GenerateCode(result));
         }
     }
 }

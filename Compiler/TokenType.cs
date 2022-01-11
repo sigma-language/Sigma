@@ -40,6 +40,19 @@
         OCT_NUMBER,
         COLON,
         PRINT,
+
+        // Types
+        INT,
+        FLOAT,
+        BOOL,
 #pragma warning restore SA1602 // EnumerationItemsMustBeDocumented
+    }
+
+#pragma warning disable SA1649 // SA1649FileNameMustMatchTypeName
+    public static class TokenTypeExtensions
+#pragma warning restore SA1649 // SA1649FileNameMustMatchTypeName
+    {
+        public static bool IsBuiltinType(this TokenType kind)
+            => kind == TokenType.INT || kind == TokenType.FLOAT || kind == TokenType.BOOL;
     }
 }

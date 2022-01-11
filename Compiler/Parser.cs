@@ -91,6 +91,9 @@
         {
             StatementNode statement = this.curToken.Kind switch
             {
+                var t when
+                    t.IsBuiltinType() => this.ParseVariableDeclaration(),
+
                 TokenType.PRINT => this.ParsePrintStatement(),
                 TokenType.IF => this.ParseIfStatement(),
                 TokenType.OPEN_ARROW => this.ParseBlockStatement(),
@@ -105,7 +108,7 @@
             return statement;
         }
 
-        private BlockStatementNode ParseBlockStatement()
+        private StatementBlockNode ParseBlockStatement()
         {
             List<StatementNode> statements = new ();
             this.Match(TokenType.OPEN_ARROW, $"[Syntax Error] Expected '->' at {this.curToken.Location}");
@@ -125,7 +128,7 @@
             return new (statements.ToArray());
         }
 
-        private IfStatementNode ParseIfStatement()
+        private IfNode ParseIfStatement()
         {
             this.Match(TokenType.IF);
 
@@ -138,13 +141,42 @@
             return new (condition, body);
         }
 
-        private PrintStatementNode ParsePrintStatement()
+        private PrintNode ParsePrintStatement()
         {
             this.Match(TokenType.PRINT);
             var expr = this.ParseExpression();
-            this.Match(TokenType.SEMICOLON, $"[Syntax Error] Missing ';'");
+            this.Match(TokenType.SEMICOLON, $"[Syntax Error] Missing ';' (todo add location)");
 
             return new (expr);
+        }
+
+        private VarDeclNode ParseVariableDeclaration()
+        {
+            var typeNode = this.ParseType();
+
+            var id = this.curToken.Text;
+            this.Match(TokenType.IDENT, $"[Syntax Error] Expected a valid identifier name, got `{id}` at {this.curToken.Location}");
+
+            ExprNode rhsExpr = null;
+            if (this.CheckToken(TokenType.EQ))
+            {
+                this.Consume();
+                rhsExpr = this.ParseExpression();
+            }
+
+            this.Match(TokenType.SEMICOLON, $"[Syntax Error] Missing ';' at {this.curToken.Location} (todo add location)");
+
+            return new (typeNode, id, rhsExpr);
+        }
+
+        private TypeNode ParseType()
+        {
+            if (!this.curToken.Kind.IsBuiltinType())
+            {
+                this.logger.Abort($"[Syntax Error] Invalid type `{this.curToken.Text}` at {this.curToken.Location}");
+            }
+
+            return new (this.Consume());
         }
 
         private bool CheckToken(TokenType kind)

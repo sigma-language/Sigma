@@ -2,9 +2,9 @@
 {
     using Compiler.Visitors;
 
-    public class BlockStatementNode : StatementNode
+    public class StatementBlockNode : StatementNode
     {
-        public BlockStatementNode(StatementNode[] statements)
+        public StatementBlockNode(StatementNode[] statements)
         {
             this.Statements = statements;
         }

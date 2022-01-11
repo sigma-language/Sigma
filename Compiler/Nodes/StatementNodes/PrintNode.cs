@@ -3,9 +3,9 @@
     using Compiler.Nodes.ExprNodes;
     using Compiler.Visitors;
 
-    public class PrintStatementNode : StatementNode
+    public class PrintNode : StatementNode
     {
-        public PrintStatementNode(ExprNode expr)
+        public PrintNode(ExprNode expr)
         {
             this.Expr = expr;
         }

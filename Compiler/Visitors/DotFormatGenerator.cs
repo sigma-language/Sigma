@@ -60,14 +60,47 @@
             this.Visit((dynamic)node.Right);
         }
 
+        public override void Visit(GroupExprNode node)
+        {
+            this.Visit((dynamic)node.Expr);
+        }
+
         public override void Visit(TernaryNode node)
         {
-            throw new System.NotImplementedException();
+            var selfId = this.counter;
+            this.counter++;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=ternary shape=box];\n");
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.Condition);
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.ThenArm);
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.ElseArm);
         }
 
         public override void Visit(PrefixNode node)
         {
-            throw new System.NotImplementedException();
+            var selfId = this.counter;
+            this.counter++;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=\"{node.Op.Text}\"];\n");
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.Right);
         }
 
         public override void Visit(PostfixNode node)
@@ -75,7 +108,7 @@
             throw new System.NotImplementedException();
         }
 
-        public override void Visit(BlockStatementNode node)
+        public override void Visit(StatementBlockNode node)
         {
             var selfId = this.counter;
             this.counter += 1;
@@ -94,7 +127,7 @@
             }
         }
 
-        public override void Visit(IfStatementNode node)
+        public override void Visit(IfNode node)
         {
             var selfId = this.counter;
             this.counter += 1;
@@ -113,7 +146,7 @@
             this.Visit((dynamic)node.Body);
         }
 
-        public override void Visit(PrintStatementNode node)
+        public override void Visit(PrintNode node)
         {
             var selfId = this.counter;
             this.counter += 1;
@@ -127,6 +160,41 @@
 
             this.parentId = selfId;
             this.Visit((dynamic)node.Expr);
+        }
+
+        public override void Visit(VarDeclNode node)
+        {
+            var selfId = this.counter;
+            this.counter += 1;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=\"VarDecl:\\n{node.VarType.Type.Text} {node.Id}\" shape=box];\n");
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.VarType);
+
+            if (node.RHS != null)
+            {
+                this.parentId = selfId;
+                this.Visit((dynamic)node.RHS);
+            }
+        }
+
+        public override void Visit(TypeNode node)
+        {
+            var selfId = this.counter;
+            this.counter += 1;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label={node.Type.Text} shape=box];\n");
         }
     }
 }

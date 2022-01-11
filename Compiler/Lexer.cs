@@ -9,6 +9,11 @@
         {
             { "if", TokenType.IF },
             { "print", TokenType.PRINT },
+
+            // Types
+            { "int", TokenType.INT },
+            { "float", TokenType.FLOAT },
+            { "bool", TokenType.BOOL },
         };
 
         private readonly TextLogger logger;
@@ -333,6 +338,7 @@
 
                 // Yes
                 ('=', _)   => this.CreateToken('=', TokenType.EQ),
+                (':', _)   => this.CreateToken(':', TokenType.COLON),
                 ('"', _)   => this.CreateToken('"', TokenType.QUOTE),
 
                 ('\0', _)  => this.CreateToken('\0', TokenType.EOF),
