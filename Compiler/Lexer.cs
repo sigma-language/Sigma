@@ -8,6 +8,7 @@
         private static Dictionary<string, TokenType> keywords = new ()
         {
             { "if", TokenType.IF },
+            { "while", TokenType.WHILE },
             { "print", TokenType.PRINT },
 
             // Types
@@ -160,14 +161,14 @@
             if (!char.IsDigit(this.curChar))
             {
                 var invalidNumber = this.source[startPos..(this.pos + 1)];
-                this.logger.Abort($"Invalid binary literal: `{invalidNumber}` at {this.CurLocation}");
+                this.logger.Fatal($"Invalid binary literal: `{invalidNumber}` at {this.CurLocation}");
             }
 
             while (char.IsDigit(this.curChar))
             {
                 if (!(this.curChar == '0' || this.curChar == '1'))
                 {
-                    this.logger.Abort($"Invalid digit in binary literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                    this.logger.Fatal($"Invalid digit in binary literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
                 }
 
                 this.Advance();
@@ -190,14 +191,14 @@
             if (!IsHexChar(this.curChar))
             {
                 var invalidNumber = this.source[startPos..(this.pos + 1)];
-                this.logger.Abort($"Invalid hexadecimal literal: `{invalidNumber}` at {this.CurLocation}");
+                this.logger.Fatal($"Invalid hexadecimal literal: `{invalidNumber}` at {this.CurLocation}");
             }
 
             while (IsHexChar(this.curChar))
             {
                 if (!IsHexChar(this.curChar))
                 {
-                    this.logger.Abort($"Invalid character in hexadecimal literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                    this.logger.Fatal($"Invalid character in hexadecimal literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
                 }
 
                 this.Advance();
@@ -220,14 +221,14 @@
             if (!IsOctalChar(this.curChar))
             {
                 var invalidNumber = this.source[startPos..(this.pos + 1)];
-                this.logger.Abort($"Invalid octal literal: `{invalidNumber}` at {this.CurLocation}");
+                this.logger.Fatal($"Invalid octal literal: `{invalidNumber}` at {this.CurLocation}");
             }
 
             while (IsOctalChar(this.curChar))
             {
                 if (!IsOctalChar(this.curChar))
                 {
-                    this.logger.Abort($"Invalid character in octal literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                    this.logger.Fatal($"Invalid character in octal literal: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
                 }
 
                 this.Advance();
@@ -254,7 +255,7 @@
 
                 if (!char.IsDigit(this.curChar))
                 {
-                    this.logger.Abort($"Expected a digit after the decimal point, got: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+                    this.logger.Fatal($"Expected a digit after the decimal point, got: `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
                 }
 
                 while (char.IsDigit(this.curChar))
@@ -385,7 +386,7 @@
 
             if (token is null)
             {
-               this.logger.Abort($"Unknown character `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
+               this.logger.Fatal($"Unknown character `{this.curChar}` (U+{(int)this.curChar}) at {this.CurLocation}");
             }
 
             return token;

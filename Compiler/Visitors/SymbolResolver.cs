@@ -1,165 +1,118 @@
 ﻿namespace Compiler.Visitors
 {
-    using System.Text;
     using Compiler.Nodes.ExprNodes;
     using Compiler.Nodes.StatementNodes;
     using Compiler.Symbols;
 
-    public class CodeGenerator : NodeVisitor
+    public class SymbolResolver : NodeVisitor
     {
-        private readonly StringBuilder result;
         private readonly SymbolTable symbolTable;
         private readonly TextLogger logger;
 
-        public CodeGenerator(SymbolTable symbolTable, TextLogger logger)
+        public SymbolResolver(TextLogger logger)
         {
-            this.result = new ();
-            this.symbolTable = symbolTable;
             this.logger = logger;
+            this.symbolTable = new ();
         }
 
-        public string GenerateCode(dynamic node)
+        public SymbolTable GenerateSymbolTable(dynamic node)
         {
-            this.result.Append("#include <stdio.h>\n");
-            this.result.Append("#include <stdbool.h>\n");
-            this.result.Append("int main(void) {\n");
-            this.Visit(node);
-            this.result.Append("return 0;\n}");
-
-            return this.result.ToString();
+            this.Visit((dynamic)node);
+            return this.symbolTable;
         }
 
         public override void Visit(NameNode node)
         {
-            Symbol _;
-            if (!this.symbolTable.LookupSymbol(node.Name, out _))
+            Symbol symbol;
+            if (!this.symbolTable.LookupSymbol(node.Name, out symbol))
             {
-                this.logger.Fatal($"[Compiler Error] {node.Name} not in symbol table.");
+                this.logger.Fatal($"[Error] The name `{node.Name}` does not exist in the current context");
             }
-
-            this.result.Append(node.Name);
         }
 
         public override void Visit(NumberNode node)
         {
-            this.result.Append(node.Value);
+            return;
         }
 
         public override void Visit(BinaryOperationNode node)
         {
             this.Visit((dynamic)node.Left);
-            this.result.Append(node.Op.Text);
             this.Visit((dynamic)node.Right);
         }
 
         public override void Visit(GroupExprNode node)
         {
-            this.result.Append('(');
             this.Visit((dynamic)node.Expr);
-            this.result.Append(')');
         }
 
         public override void Visit(TernaryNode node)
         {
-            this.result.Append('(');
             this.Visit((dynamic)node.Condition);
-            this.result.Append(" ? ");
             this.Visit((dynamic)node.ThenArm);
-            this.result.Append(" : ");
             this.Visit((dynamic)node.ElseArm);
-            this.result.Append(')');
         }
 
         public override void Visit(PrefixNode node)
         {
-            this.result.Append(node.Op.Text);
             this.Visit((dynamic)node.Right);
         }
 
         public override void Visit(PostfixNode node)
         {
-            throw new System.NotImplementedException();
+            this.Visit((dynamic)node.Left);
         }
 
         public override void Visit(AssignNode node)
         {
             this.Visit((dynamic)node.Name);
-            this.result.Append($" = ");
             this.Visit((dynamic)node.Right);
         }
 
         public override void Visit(ExpressionStatementNode node)
         {
             this.Visit((dynamic)node.Expr);
-            this.result.Append(";\n");
         }
 
         public override void Visit(StatementBlockNode node)
         {
             this.symbolTable.EnterScope();
-            this.result.Append("{\n");
-
             foreach (var statementNode in node.Statements)
             {
                 this.Visit((dynamic)statementNode);
             }
 
-            this.result.Append('}');
             this.symbolTable.LeaveScope();
         }
 
         public override void Visit(IfNode node)
         {
-            this.result.Append("if (");
             this.Visit((dynamic)node.Condition);
-            this.result.Append(")\n");
-
             this.Visit((dynamic)node.Body);
-            this.result.Append('\n');
         }
 
         public override void Visit(WhileNode node)
         {
-            this.result.Append("while (");
             this.Visit((dynamic)node.Condition);
-            this.result.Append(")\n");
-
             this.Visit((dynamic)node.Body);
-            this.result.Append('\n');
         }
 
         public override void Visit(PrintNode node)
         {
-            this.result.Append("printf(\"%d\\n\", ");
             this.Visit((dynamic)node.Expr);
-            this.result.Append(");\n");
         }
 
         public override void Visit(VarDeclNode node)
         {
-            Symbol sym;
-            if (!this.symbolTable.LookupSymbol(node.Id, out sym))
+            if (!this.symbolTable.InsertSymbol(node.Id, new VariableSymbol(node.Id, node.Type)))
             {
-                this.logger.Fatal($"[Compiler Error] {node.Id} not in symbol table.");
+                this.logger.Fatal($"[Error] A local variable or function `{node.Id}` is already declared in this scope");
             }
-
-            VariableSymbol symbol = (VariableSymbol)sym;
-
-            this.Visit((dynamic)node.VarType);
-            this.result.Append($"{symbol.Name}");
-
-            if (node.RHS != null)
-            {
-                this.result.Append($" = ");
-                this.Visit((dynamic)node.RHS);
-            }
-
-            this.result.Append(";\n");
         }
 
         public override void Visit(TypeNode node)
         {
-            this.result.Append($"{node.Type.Text} ");
+            return;
         }
     }
 }

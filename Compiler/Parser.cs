@@ -1,7 +1,6 @@
 ﻿namespace Compiler
 {
     using System.Collections.Generic;
-    using Compiler;
     using Compiler.Nodes.ExprNodes;
     using Compiler.Nodes.StatementNodes;
     using Compiler.Parselets.Infix;
@@ -11,7 +10,6 @@
     {
         private readonly Dictionary<TokenType, PrefixParselet> prefixParselets;
         private readonly Dictionary<TokenType, InfixParselet> infixParselets;
-        private readonly TextLogger logger;
         private readonly Queue<Token> tokens;
 
         private Token curToken;
@@ -19,7 +17,7 @@
 
         public Parser(List<Token> tokens, TextLogger logger)
         {
-            this.logger = logger;
+            this.Logger = logger;
             this.tokens = new (tokens);
 
             this.prefixParselets = new ();
@@ -28,6 +26,9 @@
             this.NextToken();
             this.NextToken();
         }
+
+        public TextLogger Logger { get; init; }
+
 
         public StatementNode Parse()
         {
@@ -42,7 +43,7 @@
         {
             if (!this.CheckToken(kind))
             {
-                this.logger.Abort($"Expected {kind}, got {this.curToken.Kind} at {this.curToken.Location}");
+                this.Logger.Fatal($"Expected {kind}, got {this.curToken.Kind} at {this.curToken.Location}");
             }
 
             this.NextToken();
@@ -52,7 +53,7 @@
         {
             if (!this.CheckToken(kind))
             {
-                this.logger.Abort(message);
+                this.Logger.Fatal(message);
             }
 
             this.NextToken();
@@ -65,7 +66,7 @@
             PrefixParselet prefix;
             if (!this.prefixParselets.TryGetValue(token.Kind, out prefix))
             {
-                this.logger.Abort($"Unexpected token `{token.Text}` at {token.Location}");
+                this.Logger.Fatal($"Unexpected token `{token.Text}` at {token.Location}");
             }
 
             ExprNode left = prefix.Parse(this, token);
@@ -94,18 +95,27 @@
                 var t when
                     t.IsBuiltinType() => this.ParseVariableDeclaration(),
 
-                TokenType.PRINT => this.ParsePrintStatement(),
                 TokenType.IF => this.ParseIfStatement(),
+                TokenType.WHILE => this.ParseWhileStatement(),
+                TokenType.PRINT => this.ParsePrintStatement(),
                 TokenType.OPEN_ARROW => this.ParseBlockStatement(),
-                _ => null
+
+                _ => this.ParseExpressionStatement()
             };
 
             if (statement == null)
             {
-                this.logger.Abort($"Unexpected token `{this.curToken.Text}`");
+                this.Logger.Fatal($"Unexpected token `{this.curToken.Text}`");
             }
 
             return statement;
+        }
+
+        private ExpressionStatementNode ParseExpressionStatement()
+        {
+            ExprNode expr = this.ParseExpression();
+            this.Match(TokenType.SEMICOLON, $"[Syntax Error] Missing ';' at {this.curToken.Location} (todo add location)");
+            return new (expr);
         }
 
         private StatementBlockNode ParseBlockStatement()
@@ -131,6 +141,19 @@
         private IfNode ParseIfStatement()
         {
             this.Match(TokenType.IF);
+
+            this.Match(TokenType.LPAREN, $"[Syntax Error] Expected '(' at {this.curToken.Location}");
+            var condition = this.ParseExpression();
+            this.Match(TokenType.RPAREN, $"[Syntax Error] Expected ')' at {this.curToken.Location}");
+
+            var body = this.ParseBlockStatement();
+
+            return new (condition, body);
+        }
+
+        private WhileNode ParseWhileStatement()
+        {
+            this.Match(TokenType.WHILE);
 
             this.Match(TokenType.LPAREN, $"[Syntax Error] Expected '(' at {this.curToken.Location}");
             var condition = this.ParseExpression();
@@ -173,7 +196,7 @@
         {
             if (!this.curToken.Kind.IsBuiltinType())
             {
-                this.logger.Abort($"[Syntax Error] Invalid type `{this.curToken.Text}` at {this.curToken.Location}");
+                this.Logger.Fatal($"[Syntax Error] Invalid type `{this.curToken.Text}` at {this.curToken.Location}");
             }
 
             return new (this.Consume());

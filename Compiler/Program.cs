@@ -10,11 +10,25 @@ namespace Compiler
         {
             string source = @"
                 ->
-                    int sus = 1 + 1;
-                    if (1) ->
-                        print -5 * 4;
-                        // print (5 * 4 - 2) / (4 < 3 ? 2 : 4);
-                        // print (5 * 4 - 2) / (4 > 3 ? 2 : 4);
+                    //int sus = 1 + 1;
+
+                    //if (1) ->
+                    //    bool isAlive = 1;
+                    //    print -5 * sus;
+                    //    // print (5 * 4 - 2) / (4 < 3 ? 2 : 4);
+                    //    // print (5 * 4 - 2) / (4 > 3 ? 2 : 4);
+                    //<-
+
+                    int t1 = 0;
+                    int t2 =  1;
+                    int nextTerm = 0;
+                    int n = 100;
+
+                    while (nextTerm <= n) ->
+                        print nextTerm;
+                        t1 = t2;
+                        t2 = nextTerm;
+                        nextTerm = t1 + t2;
                     <-
                 <-
             ";
@@ -35,7 +49,11 @@ namespace Compiler
             DotFormatGenerator dotter = new ();
             Console.WriteLine(dotter.GenerateDotString(result));
 
-            CodeGenerator codeGen = new ();
+            SymbolResolver symbolResolver = new SymbolResolver(logger);
+            var table = symbolResolver.GenerateSymbolTable(result);
+            table.Dump();
+
+            CodeGenerator codeGen = new (table, logger);
             Console.WriteLine(codeGen.GenerateCode(result));
         }
     }

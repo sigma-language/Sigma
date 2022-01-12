@@ -28,6 +28,19 @@
             return this.graphCode.ToString();
         }
 
+        public override void Visit(NameNode node)
+        {
+            var selfId = this.counter;
+            this.counter += 1;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=\"{node.Name}\"];\n");
+        }
+
         public override void Visit(NumberNode node)
         {
             var selfId = this.counter;
@@ -108,6 +121,41 @@
             throw new System.NotImplementedException();
         }
 
+        public override void Visit(AssignNode node)
+        {
+            var selfId = this.counter;
+            this.counter += 1;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=\"=\"];\n");
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.Name);
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.Right);
+        }
+
+        public override void Visit(ExpressionStatementNode node)
+        {
+            var selfId = this.counter;
+            this.counter += 1;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=Expr shape=box];\n");
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.Expr);
+        }
+
         public override void Visit(StatementBlockNode node)
         {
             var selfId = this.counter;
@@ -138,6 +186,25 @@
             }
 
             this.graphCode.Append($"n{selfId} [label=if shape=box];\n");
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.Condition);
+
+            this.parentId = selfId;
+            this.Visit((dynamic)node.Body);
+        }
+
+        public override void Visit(WhileNode node)
+        {
+            var selfId = this.counter;
+            this.counter += 1;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=while shape=box];\n");
 
             this.parentId = selfId;
             this.Visit((dynamic)node.Condition);

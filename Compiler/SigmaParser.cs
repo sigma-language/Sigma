@@ -6,14 +6,15 @@
 
     public enum Precedence
     {
-        CONDITIONAL = 1,
-        BOOL_OR = 2,
-        BOOL_AND = 3,
-        SUM = 4,
-        PRODUCT = 5,
-        PREFIX = 6,
-        POSTFIX = 7,
-        EXPONENT = 8,
+        ASSIGNMENT = 1,
+        CONDITIONAL,
+        BOOL_OR,
+        BOOL_AND,
+        SUM,
+        PRODUCT,
+        PREFIX,
+        POSTFIX,
+        EXPONENT,
     }
 
     public class SigmaParser : Parser
@@ -21,6 +22,8 @@
         public SigmaParser(List<Token> tokens, TextLogger logger)
         : base(tokens, logger)
         {
+            this.Register(TokenType.IDENT, new NameParselet());
+            this.Register(TokenType.EQ, new AssignParselet((int)Precedence.ASSIGNMENT));
             this.Register(TokenType.NUMBER, new NumberParselet());
             this.Register(TokenType.BIN_NUMBER, new NumberParselet());
             this.Register(TokenType.HEX_NUMBER, new NumberParselet());

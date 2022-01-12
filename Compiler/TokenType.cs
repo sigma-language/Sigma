@@ -45,6 +45,7 @@
         INT,
         FLOAT,
         BOOL,
+        WHILE,
 #pragma warning restore SA1602 // EnumerationItemsMustBeDocumented
     }
 

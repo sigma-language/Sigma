@@ -12,7 +12,7 @@
             this.writer = writer;
         }
 
-        public void Abort(string message)
+        public void Fatal(string message)
         {
             this.writer.WriteLine(message);
             Environment.Exit(1);

@@ -12,6 +12,8 @@
             this.RHS = rhsExpr;
         }
 
+        public string Type => this.VarType.Type.Text;
+
         public TypeNode VarType { get; init; }
 
         public string Id { get; init; }
