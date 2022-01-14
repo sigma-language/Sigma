@@ -10,6 +10,7 @@
             { "if", TokenType.IF },
             { "while", TokenType.WHILE },
             { "print", TokenType.PRINT },
+            { "switch", TokenType.SWITCH },
 
             // Types
             { "int", TokenType.INT },
@@ -303,10 +304,12 @@
                 #pragma warning disable SA1025 // CodeMustNotContainMultipleWhitespaceInARow
                 // Delimiters
                 (';', _)   => this.CreateToken(';', TokenType.SEMICOLON),
+                (',', _)   => this.CreateToken(',', TokenType.COMMA),
                 ('(', _)   => this.CreateToken('(', TokenType.LPAREN),
                 (')', _)   => this.CreateToken(')', TokenType.RPAREN),
                 ('-', '>') => this.CreateToken("->", TokenType.OPEN_ARROW),
                 ('<', '-') => this.CreateToken("<-", TokenType.CLOSE_ARROW),
+                ('=', '>') => this.CreateToken("=>", TokenType.BIG_ARROW),
 
                 // Comparisons (2 long)
                 ('=', '=') => this.CreateToken("==", TokenType.EQEQ),

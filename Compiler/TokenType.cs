@@ -46,6 +46,9 @@
         FLOAT,
         BOOL,
         WHILE,
+        SWITCH,
+        BIG_ARROW,
+        COMMA,
 #pragma warning restore SA1602 // EnumerationItemsMustBeDocumented
     }
 

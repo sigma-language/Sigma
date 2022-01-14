@@ -15,6 +15,8 @@
 
         public abstract void Visit(GroupExprNode node);
 
+        public abstract void Visit(SwitchExpressionNode node);
+
         public abstract void Visit(TernaryNode node);
 
         public abstract void Visit(PrefixNode node);

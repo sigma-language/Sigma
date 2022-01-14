@@ -100,6 +100,34 @@
             this.Visit((dynamic)node.ElseArm);
         }
 
+        public override void Visit(SwitchExpressionNode node)
+        {
+            var selfId = this.counter;
+            this.counter++;
+
+            if (this.parentId != selfId)
+            {
+                this.graphCode.Append($"n{this.parentId} -> n{selfId};\n");
+            }
+
+            this.graphCode.Append($"n{selfId} [label=switchExpr shape=box];\n");
+
+            int i = 999999;
+            foreach (var c in node.Cases)
+            {
+                var nodeId = selfId + i;
+                this.graphCode.Append($"n{nodeId} [label=case];\n");
+                this.graphCode.Append($"n{selfId} -> n{nodeId};\n");
+
+                this.parentId = nodeId;
+                this.Visit((dynamic)c.condition);
+
+                this.parentId = nodeId;
+                this.Visit((dynamic)c.value);
+                i += 1;
+            }
+        }
+
         public override void Visit(PrefixNode node)
         {
             var selfId = this.counter;

@@ -161,5 +161,22 @@
         {
             this.result.Append($"{node.Type.Text} ");
         }
+
+        public override void Visit(SwitchExpressionNode node)
+        {
+            foreach (var c in node.Cases[0.. (node.Cases.Length - 1)])
+            {
+                this.Visit((dynamic)c.condition);
+                this.result.Append($" ? ");
+                this.Visit((dynamic)c.value);
+                this.result.Append($" : ");
+            }
+
+            var lastCase = node.Cases[^1];
+            this.Visit((dynamic)lastCase.condition);
+            this.result.Append($" ? ");
+            this.Visit((dynamic)lastCase.value);
+            this.result.Append($" : 0");
+        }
     }
 }

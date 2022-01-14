@@ -29,7 +29,6 @@
 
         public TextLogger Logger { get; init; }
 
-
         public StatementNode Parse()
         {
             //while (!this.CheckToken(TokenType.EOF))
@@ -38,6 +37,12 @@
             //}
             return this.ParseStatement();
         }
+
+        public bool CheckToken(TokenType kind)
+            => kind == this.curToken.Kind;
+
+        public bool CheckPeek(TokenType kind)
+            => kind == this.peekToken.Kind;
 
         public void Match(TokenType kind)
         {
@@ -201,12 +206,6 @@
 
             return new (this.Consume());
         }
-
-        private bool CheckToken(TokenType kind)
-            => kind == this.curToken.Kind;
-
-        private bool CheckPeek(TokenType kind)
-            => kind == this.peekToken.Kind;
 
         private Token Consume()
         {

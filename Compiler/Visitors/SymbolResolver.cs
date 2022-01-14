@@ -114,5 +114,10 @@
         {
             return;
         }
+
+        public override void Visit(SwitchExpressionNode node)
+        {
+            return;
+        }
     }
 }

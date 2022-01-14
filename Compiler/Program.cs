@@ -10,26 +10,13 @@ namespace Compiler
         {
             string source = @"
                 ->
-                    //int sus = 1 + 1;
-
-                    //if (1) ->
-                    //    bool isAlive = 1;
-                    //    print -5 * sus;
-                    //    // print (5 * 4 - 2) / (4 < 3 ? 2 : 4);
-                    //    // print (5 * 4 - 2) / (4 > 3 ? 2 : 4);
-                    //<-
-
-                    int t1 = 0;
-                    int t2 =  1;
-                    int nextTerm = 0;
-                    int n = 100;
-
-                    while (nextTerm <= n) ->
-                        print nextTerm;
-                        t1 = t2;
-                        t2 = nextTerm;
-                        nextTerm = t1 + t2;
-                    <-
+                    int check = 10;
+                    int sus = check switch ->
+                        4 => 0,
+                        sus => 1 + 2,
+                        2 * 5 => -5,
+                    <-;
+                    print sus;
                 <-
             ";
 

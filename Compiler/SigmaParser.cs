@@ -31,6 +31,7 @@
 
             this.Register(TokenType.LPAREN, new GroupParselet());
             this.Register(TokenType.QUESTION, new TernaryParselet((int)Precedence.CONDITIONAL));
+            this.Register(TokenType.SWITCH, new SwitchExpressionParselet((int)Precedence.CONDITIONAL));
 
             // Register the simple operator parselets.
             this.RegisterPrefix(TokenType.PLUS, (int)Precedence.PREFIX);
